@@ -6,34 +6,142 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+
+        .header {
+            width: 100vw;
+            height: 20vh;
+            background: url(imgs/hc-hero.png);
+        }
+
+        .logo {
+            width: 80%;
+            height: 40px;
+            background: url(imgs/hyatt-centric_logo.png);
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            margin: auto;
+        }
+
+        .header {
+            background-size: cover;
+        }
+
+        .logo {
+            background-size: contain;
+        }
+
+        .header,
+        .logo {
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+
+        .mapboxgl-ctrl-bottom-left {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body>
-
-    <div id='map' style='width: 100vw; height: 100vh;'></div>
+    <div class="header">
+        <div class="logo"></div>
+    </div>
+    <div id='map' style='width: 100vw;height:100vh;'></div>
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoiYmVuamV6emEiLCJhIjoidThLal9BayJ9.b8xPfHIi11lvxq9zKb4_tg';
+
+        // Set Bounds for scrolling the map
+        const bounds = [
+            [144.935672086874, -37.829472306921645], // Southwest coordinates
+            [144.9905417473975, -37.789891987912604] // Northeast coordinates
+        ];
+
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/benjezza/cirh2hn470007gonbcolue4za',
-            center: [144.96, -37.82],
-            zoom: 13
+            center: [144.957964668986, -37.81700742961625],
+            zoom: 15,
+            pitch: 45,
+            bearing: 10,
+            container: 'map',
+            antialias: true,
+            attributionControl: false,
+            maxBounds: bounds // Set the map's geographical boundaries.
         });
 
-        // Create a default Marker and add it to the map.
-        const marker1 = new mapboxgl.Marker()
-            .setLngLat([144.96849613229736, -37.82121243531571])
-            .addTo(map);
-
         // Create a default Marker, colored black, rotated 45 degrees.
-        const marker2 = new mapboxgl.Marker({ color: 'black', rotation: 45 })
-            .setLngLat([144.96466666377617, -37.821414670389004])
-            .addTo(map);
+        // const marker2 = new mapboxgl.Marker({
+        //     color: '#bada55',
+        //     scale: '2',
+        // })
+        //     .setLngLat([144.95563391022924, -37.82019403689692])
+        //     .addTo(map);
+
+        map.on('load', () => {
+            // Insert the layer beneath any symbol layer.
+            const layers = map.getStyle().layers;
+            const labelLayerId = layers.find(
+                (layer) => layer.type === 'symbol' && layer.layout['text-field']
+            ).id;
+
+            // The 'building' layer in the Mapbox Streets
+            // vector tileset contains building height data
+            // from OpenStreetMap.
+            map.addLayer(
+                {
+                    'id': 'add-3d-buildings',
+                    'source': 'composite',
+                    'source-layer': 'building',
+                    'filter': ['==', 'extrude', 'true'],
+                    'type': 'fill-extrusion',
+                    'minzoom': 15,
+                    'paint': {
+                        'fill-extrusion-color': '#aaa',
+
+                        // Use an 'interpolate' expression to
+                        // add a smooth transition effect to
+                        // the buildings as the user zooms in.
+                        'fill-extrusion-height': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            15,
+                            0,
+                            15.05,
+                            ['get', 'height']
+                        ],
+                        'fill-extrusion-base': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            15,
+                            0,
+                            15.05,
+                            ['get', 'min_height']
+                        ],
+                        'fill-extrusion-opacity': 0.6
+                    }
+                },
+                labelLayerId
+            );
+        });
+
+        // Add zoom and rotation controls to the map.
+        map.addControl(new mapboxgl.NavigationControl());
     </script>
-
-
 </body>
 
 </html>
